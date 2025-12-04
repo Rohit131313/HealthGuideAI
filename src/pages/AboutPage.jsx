@@ -1,4 +1,3 @@
-// src/pages/AboutPage.jsx
 import { useAppContext } from "../context/AppContext";
 
 export default function AboutPage() {

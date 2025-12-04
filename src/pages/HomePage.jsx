@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InputField from "../components/InputField";
 import GoalDropdown from "../components/GoalDropdown";
 import SpecificGoalField from "../components/SpecificGoalField";
 import TipList from "../components/TipList";
 import { generateShortTips } from "../services/aiService";
 import { useAppContext } from "../context/AppContext";
+import TipSkeleton from "../components/TipSkeleton";
+import { usePopup } from "../context/PopUpContext";
+
 
 export default function HomePage() {
+    const { showPopup } = usePopup();
     const goals = [
         "Weight Loss", "Muscle Gain", "Better Sleep", "Stress Relief",
         "Healthy Eating", "Mental Wellness", "Increase Energy",
@@ -50,17 +54,29 @@ export default function HomePage() {
 
             setTips(tipsWithId);
 
-            // Auto-scroll
-            setTimeout(() => {
-                document.getElementById("tips-section")?.scrollIntoView({ behavior: "smooth" });
-            }, 200);
+
 
         } catch (err) {
-            setErrorMsg("Something went wrong while generating tips. Please try again.");
+            // setErrorMsg("Something went wrong while generating tips. Please try again.");
+            showPopup("Failed to generate tips. Try again.", "error");
         }
 
         setLoading(false);
     };
+
+    useEffect(() => {
+        // Scroll the moment loading starts → skeletons appear
+        if (loading) {
+            const el = document.getElementById("tips-section");
+            if (el) {
+                setTimeout(() => {
+                    el.scrollIntoView({ behavior: "smooth" });
+                }, 150);
+            }
+        }
+    }, [loading]);
+
+
 
     return (
         <div
@@ -158,17 +174,37 @@ export default function HomePage() {
                     </button>
                 </div>
 
-                {/*  TIPS SECTION  */}
-                {tips.length > 0 && (
-                    <div id="tips-section" className="mt-10">
-                        <h2 className={`text-xl font-semibold mb-4 ${darkMode ? "text-gray-100" : "text-gray-800"
-                            }`}>
-                            Your Personalized Wellness Tips
-                        </h2>
+                {/* SCROLL TARGET */}
+                <div id="tips-section" className="h-10 w-10"></div>
 
-                        <TipList tips={tips} />
-                    </div>
-                )}
+                {/* Content Block */}
+                <div className="mt-10">
+                    {/* Loading */}
+                    {loading && (
+                        <div className="grid gap-5">
+                            <TipSkeleton />
+                            <TipSkeleton />
+                            <TipSkeleton />
+                            <TipSkeleton />
+                            <TipSkeleton />
+                        </div>
+                    )}
+
+                    {/* Real Tips */}
+                    {!loading && tips.length > 0 && (
+                        <>
+                            <h2
+                                className={`text-xl font-semibold mb-4 ${darkMode ? "text-gray-100" : "text-gray-800"
+                                    }`}
+                            >
+                                Your Personalized Wellness Tips
+                            </h2>
+
+                            <TipList tips={tips} />
+                        </>
+                    )}
+                </div>
+
             </div>
         </div>
     );

@@ -4,12 +4,15 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import './index.css'
 import { AppProvider } from "./context/AppContext";
+import { PopUpProvider } from "./context/PopUpContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <AppProvider>
-        <App />
+        <PopUpProvider>
+          <App />
+        </PopUpProvider>
       </AppProvider>
     </BrowserRouter>
   </React.StrictMode>

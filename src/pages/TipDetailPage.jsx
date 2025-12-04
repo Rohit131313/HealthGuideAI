@@ -9,8 +9,12 @@ import {
 } from "../services/localStorageService";
 import SaveButton from "../components/SaveButton";
 import { useAppContext } from "../context/AppContext";
+import { usePopup } from "../context/PopUpContext";
+import Typewriter from "../components/TypeWriter";
+import { motion } from "framer-motion";
 
 export default function TipDetailPage() {
+    const { showPopup } = usePopup();
     const navigate = useNavigate();
     const { formData, setFormData, tips, setTips, darkMode, setDarkMode } = useAppContext();
 
@@ -20,6 +24,10 @@ export default function TipDetailPage() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
     const [saved, setSaved] = useState(false);
+    const [showSteps, setShowSteps] = useState(false);
+    const [showExpected, setShowExpected] = useState(false);
+    const [currentStep, setCurrentStep] = useState(0);
+
 
     // Helper: find tip in saved tips
     const loadTipFromStorage = (tipId) => {
@@ -105,8 +113,9 @@ export default function TipDetailPage() {
                     setSaved(true);
                 }
             } catch (err) {
-                console.error("Failed to generate detailed tip:", err);
-                setErrorMsg("Unable to fetch detailed explanation right now. Please try again.");
+                // console.error("Failed to generate detailed tip:", err);
+                // setErrorMsg("Unable to fetch detailed explanation right now. Please try again.");
+                showPopup("AI couldn't fetch details. Try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -117,9 +126,18 @@ export default function TipDetailPage() {
 
     const handleSave = () => {
         if (!tip) return;
-        saveTip(tip);
-        setSaved(true);
+
+        if (isAlreadySaved(tip.id)) {
+            removeTip(tip.id);
+            setSaved(false);
+            showPopup("Removed from favorites.", "error");
+        } else {
+            saveTip(tip);
+            setSaved(true);
+            showPopup("Saved to favorites.", "success");
+        }
     };
+
 
     const handleRetry = () => {
         setTip((prev) => ({
@@ -133,8 +151,8 @@ export default function TipDetailPage() {
         return (
             <div
                 className={`min-h-screen flex items-center justify-center ${darkMode
-                        ? "bg-gray-900 text-gray-200"
-                        : "bg-gray-50 text-gray-700"
+                    ? "bg-gray-900 text-gray-200"
+                    : "bg-gray-50 text-gray-700"
                     }`}
             >
                 <p>Loading tip...</p>
@@ -145,8 +163,8 @@ export default function TipDetailPage() {
     return (
         <div
             className={`min-h-screen ${darkMode
-                    ? "bg-gray-900 text-gray-100"
-                    : "bg-gray-50 text-gray-900"
+                ? "bg-gray-900 text-gray-100"
+                : "bg-gray-50 text-gray-900"
                 }`}>
             <div className="max-w-3xl mx-auto px-4 py-8">
                 {/* Back Button */}
@@ -164,16 +182,16 @@ export default function TipDetailPage() {
                 </div>
 
                 <div className={`rounded-2xl shadow-lg border p-6 space-y-5 ${darkMode
-                        ? "bg-gray-800 border-gray-700"
-                        : "bg-white border-gray-200"
+                    ? "bg-gray-800 border-gray-700"
+                    : "bg-white border-gray-200"
                     }`}>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <div className="text-4xl mb-2">{tip.icon || "🩺"}</div>
                             <h1 className={`text-2xl font-bold leading-tight ${darkMode
-                                    ? "text-gray-100"
-                                    : "text-gray-800"
+                                ? "text-gray-100"
+                                : "text-gray-800"
                                 }`}>
                                 {tip.title}
                             </h1>
@@ -197,18 +215,18 @@ export default function TipDetailPage() {
                     {/* Loading */}
                     {loading && (
                         <div className={`p-4 rounded-lg ${darkMode
-                                ? "bg-gray-700 text-gray-200"
-                                : "bg-gray-50 text-gray-600"
+                            ? "bg-gray-700 text-gray-200"
+                            : "bg-gray-50 text-gray-600"
                             }`}>
-                            Generating detailed explanation...
+                            Almost there… preparing a clear path to follow…
                         </div>
                     )}
 
                     {/* Error */}
                     {errorMsg && (
                         <div className={`p-4 rounded-lg border space-y-2 ${darkMode
-                                ? "bg-red-900/40 border-red-700 text-red-100"
-                                : "bg-red-50 border-red-100 text-red-700"
+                            ? "bg-red-900/40 border-red-700 text-red-100"
+                            : "bg-red-50 border-red-100 text-red-700"
                             }`}>
                             <div>{errorMsg}</div>
                             <div className="flex gap-3">
@@ -221,8 +239,8 @@ export default function TipDetailPage() {
                                 <button
                                     onClick={() => setErrorMsg("")}
                                     className={`cursor-pointer px-3 py-2 rounded-lg border ${darkMode
-                                            ? "border-gray-500"
-                                            : "border-gray-300"
+                                        ? "border-gray-500"
+                                        : "border-gray-300"
                                         }`}
                                 >
                                     Dismiss
@@ -238,43 +256,93 @@ export default function TipDetailPage() {
                                 ? "text-gray-100 leading-relaxed"
                                 : "text-gray-700 leading-relaxed"
                         }>
-                            <p>{tip.long_explanation}</p>
+                            {/* {console.log(tip.long_explanation)} */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <Typewriter
+                                    text={tip.long_explanation}
+                                    speed={15}
+                                    onComplete={() => setShowSteps(true)}
+                                />
+                            </motion.div>
+
                         </div>
                     )}
 
                     {/* Steps */}
-                    {tip.steps && tip.steps.length > 0 && !loading && (
+                    {tip.steps && tip.steps.length > 0 && showSteps && !loading && (
                         <div>
-                            <h3 className={`text-lg font-semibold mt-2 ${darkMode
-                                    ? "text-gray-100"
-                                    : "text-gray-800"
-                                }`}>Steps</h3>
-                            <ul className={
-                                darkMode
-                                    ? "list-disc ml-6 mt-2 space-y-2 text-gray-100"
-                                    : "list-disc ml-6 mt-2 space-y-2 text-gray-700"
-                            }>
-                                {tip.steps.map((s, i) => (
-                                    <li key={i}>{s}</li>
-                                ))}
+                            <h3 className={`text-lg font-semibold mt-2 ${darkMode ? "text-gray-100" : "text-gray-800"}`}>
+                                Steps
+                            </h3>
+
+                            <ul
+                                className={
+                                    darkMode
+                                        ? "list-disc ml-6 mt-2 space-y-2 text-gray-100"
+                                        : "list-disc ml-6 mt-2 space-y-2 text-gray-700"
+                                }
+                            >
+                                {tip.steps.map((s, i) => {
+                                    if (i > currentStep) return null; // 👈 Hide future steps
+
+                                    return (
+                                        <li key={i}>
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.6 }}
+                                            >
+                                                <Typewriter
+                                                    text={s}
+                                                    speed={15}
+                                                    onComplete={() => {
+                                                        if (i === tip.steps.length - 1) {
+                                                            // Last step → start expected progress
+                                                            setShowExpected(true);
+                                                        } else {
+                                                            // Reveal next step
+                                                            setCurrentStep(i + 1);
+                                                        }
+                                                    }}
+                                                />
+                                            </motion.div>
+
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     )}
 
+
                     {/* Expected Progress */}
-                    {tip.expected_progress && !loading && (
-                        <div className={`p-4 rounded-xl border ${darkMode
+                    {tip.expected_progress && showExpected && !loading && (
+                        <div
+                            className={`p-4 rounded-xl border ${darkMode
                                 ? "bg-green-900/30 border-green-700 text-green-100"
                                 : "bg-green-50 border-green-100 text-gray-700"
-                            }`}>
-                            <h4 className="font-semibold">
-                                Expected Progress
-                            </h4>
-                            <p className="mt-1">
-                                {tip.expected_progress}
-                            </p>
+                                }`}
+                        >
+                            <h4 className="font-semibold">Expected Progress</h4>
+
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <Typewriter
+                                    text={tip.expected_progress}
+                                    speed={20}
+                                />
+                            </motion.div>
+
                         </div>
                     )}
+
                 </div>
             </div>
         </div>

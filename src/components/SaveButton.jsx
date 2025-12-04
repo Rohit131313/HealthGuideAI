@@ -1,20 +1,17 @@
-import { useAppContext } from "../context/AppContext";
+import { motion } from "framer-motion";
 
 export default function SaveButton({ onClick, isSaved }) {
-    const { formData, setFormData, tips, setTips, darkMode, setDarkMode } = useAppContext();
     return (
-        <button
+        <motion.button
+            whileTap={{ scale: 0.8 }}
+            animate={isSaved ? { scale: [1, 1.3, 1] } : {}}
+            transition={{ duration: 0.4 }}
             onClick={onClick}
-            className={`
-                cursor-pointer px-3 py-2 rounded-lg border transition
-                ${darkMode
-                    ? "border-gray-500 bg-gray-700 text-white hover:bg-gray-600"
-                    : "border-gray-300 bg-gray-100 text-gray-800 hover:bg-gray-200"}
-                ${isSaved ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}
-            `}
-            disabled={isSaved}
+            className={`cursor-pointer text-xl ${
+                isSaved ? "text-green-500" : "text-gray-400"
+            }`}
         >
-            {isSaved ? "Saved ✓" : "Save Tip"}
-        </button>
+            {isSaved ? "❤️" : "🤍"}
+        </motion.button>
     );
 }
