@@ -59,7 +59,10 @@ export default function SavedTipsPage() {
             }`}>
             <div className="max-w-3xl mx-auto px-4 py-8">
 
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Saved Wellness Tips</h2>
+                <h2 className={`text-2xl font-bold ${darkMode
+                ? " text-gray-100"
+                : " text-gray-800"
+            }  mb-6`}>Saved Wellness Tips</h2>
 
                 <div className="grid gap-6">
                     {savedTips.map((tip) => (
